@@ -268,7 +268,7 @@ export function optionalNumber(value: unknown): number | undefined {
  */
 export function optionalNumberLike(value: unknown): number | undefined {
   const parsed =
-    typeof value === "number" ? value : typeof value === "string" && value !== "" ? Number(value) : Number.NaN;
+    typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : Number.NaN;
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
