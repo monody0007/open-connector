@@ -265,6 +265,9 @@ export function optionalNumber(value: unknown): number | undefined {
 /**
  * Return a finite number from a number or numeric string when present. Examples:
  * `optionalNumberLike("1.5") => 1.5`, `optionalNumberLike("x") => undefined`.
+ *
+ * A blank or whitespace-only string is reported as missing rather than parsed, because
+ * `Number(" ")` is `0` and a blank field would otherwise surface as a real zero.
  */
 export function optionalNumberLike(value: unknown): number | undefined {
   const parsed =

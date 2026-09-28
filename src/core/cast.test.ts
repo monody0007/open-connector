@@ -35,6 +35,7 @@ describe("cast helpers", () => {
     expect(optionalNumberLike(5.5)).toBe(5.5);
     expect(optionalNumberLike(" 5.5 ")).toBe(5.5);
   });
+
   it("decodes strict base64 bytes", () => {
     expect(Array.from(base64Bytes("aGVsbG8=", "payload"))).toEqual([104, 101, 108, 108, 111]);
   });
