@@ -159,6 +159,44 @@ describe("Spotify discovery input contracts", () => {
     expect(requests[0]!.searchParams.get("seed_tracks")).toBe("0c6xIDDpzE81m2q797ordA");
   });
 
+  it("sends recommendations for one seed and for five seeds across categories", async () => {
+    expect((await run("get_recommendations", { seedGenres: ["jazz"] })).ok).toBe(true);
+    expect(
+      (
+        await run("get_recommendations", {
+          seedArtists: ["4NHQUGzhtTLFvgF5SZesLK"],
+          seedTracks: ["0c6xIDDpzE81m2q797ordA", "7ouMYWpwJ422jRcDASZB7P"],
+          seedGenres: ["jazz", "classical"],
+        })
+      ).ok,
+    ).toBe(true);
+
+    expect(requests.map((request) => request.search)).toEqual([
+      "?seed_genres=jazz",
+      "?seed_artists=4NHQUGzhtTLFvgF5SZesLK&seed_tracks=0c6xIDDpzE81m2q797ordA%2C7ouMYWpwJ422jRcDASZB7P&seed_genres=jazz%2Cclassical",
+    ]);
+  });
+
+  it("rejects recommendations without any seed before calling Spotify", async () => {
+    for (const input of [{}, { seedArtists: [], seedTracks: [], seedGenres: [] }, { seedGenres: [""] }]) {
+      expect(await run("get_recommendations", input)).toMatchObject({
+        ok: false,
+        error: { code: "invalid_input" },
+      });
+    }
+    expect(requests).toHaveLength(0);
+  });
+
+  it("rejects more than five seeds across categories before calling Spotify", async () => {
+    const result = await run("get_recommendations", {
+      seedTracks: ["t1", "t2", "t3", "t4", "t5"],
+      seedGenres: ["jazz"],
+    });
+
+    expect(result).toMatchObject({ ok: false, error: { code: "invalid_input" } });
+    expect(requests).toHaveLength(0);
+  });
+
   it("declares the seeds get_recommendations sends", () => {
     const properties = readSchemaProperties(findAction("get_recommendations").inputSchema);
 

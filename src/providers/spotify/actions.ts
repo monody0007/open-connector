@@ -950,6 +950,7 @@ function spotifyOutputSchema(actionName: SpotifyActionName): JsonSchema {
 // Fields whose contract differs by action. The shared `state`, `after`, and seed entries in
 // spotifyInputSchema fit only some of the actions that list them.
 function actionFieldOverrides(actionName: SpotifyActionName): Record<string, JsonSchema> {
+  const recommendationSeedTotal = "Provide 1 to 5 seeds in total across seedArtists, seedTracks, and seedGenres.";
   const overridesByAction: Partial<Record<SpotifyActionName, Record<string, JsonSchema>>> = {
     toggle_playback_shuffle: {
       state: s.union([s.boolean(), s.string()], {
@@ -968,10 +969,17 @@ function actionFieldOverrides(actionName: SpotifyActionName): Record<string, Jso
       after: s.string("The last artist ID retrieved from the previous page."),
     },
     // Empty seed arrays are sent as if omitted, so callers can pass all three categories and fill only some.
+    // The runtime enforces the 1 to 5 total, which JSON Schema cannot express across three arrays.
     get_recommendations: {
-      seedArtists: s.stringArray("Artist seeds used by Spotify recommendations.", { maxItems: 5 }),
-      seedTracks: s.stringArray("Track seeds used by Spotify recommendations.", { maxItems: 5 }),
-      seedGenres: s.stringArray("Genre seeds used by Spotify recommendations.", { maxItems: 5 }),
+      seedArtists: s.stringArray(`Artist seeds used by Spotify recommendations. ${recommendationSeedTotal}`, {
+        maxItems: 5,
+      }),
+      seedTracks: s.stringArray(`Track seeds used by Spotify recommendations. ${recommendationSeedTotal}`, {
+        maxItems: 5,
+      }),
+      seedGenres: s.stringArray(`Genre seeds used by Spotify recommendations. ${recommendationSeedTotal}`, {
+        maxItems: 5,
+      }),
     },
   };
   return overridesByAction[actionName] ?? {};
