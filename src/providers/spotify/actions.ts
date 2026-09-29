@@ -887,6 +887,7 @@ function spotifyInputSchema(actionName: SpotifyActionName): JsonSchema {
       { minItems: 1 },
     ),
   };
+  Object.assign(fields, actionFieldOverrides(actionName));
   const required = requiredFields(actionName);
   const optional = optionalFields(actionName);
   const properties = Object.fromEntries(
@@ -944,6 +945,36 @@ function spotifyOutputSchema(actionName: SpotifyActionName): JsonSchema {
       "Spotify boolean result list.",
     );
   return rawObject;
+}
+
+// Fields whose contract differs by action. The shared `state`, `after`, and seed entries in
+// spotifyInputSchema fit only some of the actions that list them.
+function actionFieldOverrides(actionName: SpotifyActionName): Record<string, JsonSchema> {
+  const overridesByAction: Partial<Record<SpotifyActionName, Record<string, JsonSchema>>> = {
+    toggle_playback_shuffle: {
+      state: s.union([s.boolean(), s.string()], {
+        description:
+          'Whether shuffle should be on (true) or off (false). The strings "true" and "false" are also accepted. Omitting state turns shuffle off.',
+      }),
+    },
+    set_repeat_mode: {
+      state: s.stringEnum(
+        "Repeat mode: track repeats the current track, context the current context, off turns repeat off.",
+        ["track", "context", "off"],
+      ),
+    },
+    // A blank cursor is sent as if omitted and fetches the first page.
+    get_followed_artists: {
+      after: s.string("The last artist ID retrieved from the previous page."),
+    },
+    // Empty seed arrays are sent as if omitted, so callers can pass all three categories and fill only some.
+    get_recommendations: {
+      seedArtists: s.stringArray("Artist seeds used by Spotify recommendations.", { maxItems: 5 }),
+      seedTracks: s.stringArray("Track seeds used by Spotify recommendations.", { maxItems: 5 }),
+      seedGenres: s.stringArray("Genre seeds used by Spotify recommendations.", { maxItems: 5 }),
+    },
+  };
+  return overridesByAction[actionName] ?? {};
 }
 
 function requiredFields(actionName: SpotifyActionName): string[] {
@@ -1015,6 +1046,14 @@ function requiredFields(actionName: SpotifyActionName): string[] {
 }
 
 function optionalFields(actionName: SpotifyActionName): string[] {
+  const optionalByAction: Partial<Record<SpotifyActionName, string[]>> = {
+    get_recommendations: ["market", "limit", "seedArtists", "seedTracks", "seedGenres"],
+    get_followed_artists: ["after", "limit"],
+    skip_to_next: ["deviceId"],
+    skip_to_previous: ["deviceId"],
+  };
+  const explicit = optionalByAction[actionName];
+  if (explicit) return explicit;
   const common = [
     "market",
     "country",
