@@ -628,9 +628,7 @@ export const spotifyActionHandlers: ProviderActionHandlers<"spotify", SpotifyAct
       method: "PUT",
       query: {
         ...buildDeviceQuery(input),
-        // Earlier schemas typed state as a string, so keep accepting "true" / "false". An omitted state or any
-        // other string has always turned shuffle off.
-        state: String(optionalBoolean(input.state) ?? optionalString(input.state)?.toLowerCase() === "true"),
+        state: String(optionalBoolean(input.state) === true),
       },
     });
   },

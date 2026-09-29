@@ -3,7 +3,7 @@ import type { ExecutionContext, ExecutionResult, ResolvedCredential } from "../.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { executeAction } from "../../core/execution.ts";
 import { setDefaultGuardedFetchDnsLookup } from "../../core/guarded-fetch.ts";
-import { describeSchemaType, readSchemaProperties, readSchemaRequired } from "../../core/json-schema.ts";
+import { readSchemaProperties } from "../../core/json-schema.ts";
 import { spotifyActions } from "./actions.ts";
 import { executors } from "./executors.ts";
 
@@ -73,17 +73,14 @@ describe("Spotify player input contracts", () => {
     expect(requests[0]!.searchParams.get("state")).toBe("false");
   });
 
-  it("still accepts the string shuffle states earlier schemas asked for", async () => {
-    expect((await run("toggle_playback_shuffle", { state: "true" })).ok).toBe(true);
-    expect((await run("toggle_playback_shuffle", { state: "false" })).ok).toBe(true);
-
-    expect(requests.map((request) => request.searchParams.get("state"))).toEqual(["true", "false"]);
-  });
-
-  it("keeps turning shuffle off when state is omitted", async () => {
-    expect((await run("toggle_playback_shuffle", {})).ok).toBe(true);
-
-    expect(requests[0]!.searchParams.get("state")).toBe("false");
+  it("rejects a missing or non-boolean shuffle state before calling Spotify", async () => {
+    for (const input of [{}, { state: "true" }, { state: "false" }]) {
+      expect(await run("toggle_playback_shuffle", input)).toMatchObject({
+        ok: false,
+        error: { code: "invalid_input" },
+      });
+    }
+    expect(requests).toHaveLength(0);
   });
 
   it("sends a repeat mode Spotify defines", async () => {
@@ -205,10 +202,13 @@ describe("Spotify discovery input contracts", () => {
     expect(properties).toHaveProperty("seedGenres");
   });
 
-  it("declares a boolean or legacy string shuffle state and requires a repeat mode", () => {
-    expect(describeSchemaType(readSchemaProperties(findAction("toggle_playback_shuffle").inputSchema).state)).toBe(
-      "boolean | string",
-    );
-    expect(readSchemaRequired(findAction("set_repeat_mode").inputSchema)).toContain("state");
+  it("requests up to the 100 recommendations Spotify allows", async () => {
+    expect((await run("get_recommendations", { seedGenres: ["jazz"], limit: 100 })).ok).toBe(true);
+    expect(await run("get_recommendations", { seedGenres: ["jazz"], limit: 101 })).toMatchObject({
+      ok: false,
+      error: { code: "invalid_input" },
+    });
+
+    expect(requests.map((request) => request.search)).toEqual(["?limit=100&seed_genres=jazz"]);
   });
 });

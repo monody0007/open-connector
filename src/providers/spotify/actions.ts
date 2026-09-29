@@ -953,10 +953,7 @@ function actionFieldOverrides(actionName: SpotifyActionName): Record<string, Jso
   const recommendationSeedTotal = "Provide 1 to 5 seeds in total across seedArtists, seedTracks, and seedGenres.";
   const overridesByAction: Partial<Record<SpotifyActionName, Record<string, JsonSchema>>> = {
     toggle_playback_shuffle: {
-      state: s.union([s.boolean(), s.string()], {
-        description:
-          'Whether shuffle should be on (true) or off (false). The strings "true" and "false" are also accepted. Omitting state turns shuffle off.',
-      }),
+      state: s.boolean("Whether shuffle should be on (true) or off (false)."),
     },
     set_repeat_mode: {
       state: s.stringEnum(
@@ -971,6 +968,7 @@ function actionFieldOverrides(actionName: SpotifyActionName): Record<string, Jso
     // Empty seed arrays are sent as if omitted, so callers can pass all three categories and fill only some.
     // The runtime enforces the 1 to 5 total, which JSON Schema cannot express across three arrays.
     get_recommendations: {
+      limit: s.integer("Maximum number of recommended tracks to return.", { minimum: 1, maximum: 100 }),
       seedArtists: s.stringArray(`Artist seeds used by Spotify recommendations. ${recommendationSeedTotal}`, {
         maxItems: 5,
       }),
@@ -1046,6 +1044,7 @@ function requiredFields(actionName: SpotifyActionName): string[] {
     check_user_follows_artists_or_users: ["type", "ids"],
     seek_to_position: ["positionMs"],
     set_repeat_mode: ["state"],
+    toggle_playback_shuffle: ["state"],
     set_playback_volume: ["volumePercent"],
     transfer_playback: ["deviceIds"],
     add_item_to_playback_queue: ["uri"],
