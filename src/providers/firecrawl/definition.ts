@@ -28,7 +28,7 @@ export const provider: ProviderDefinition = {
           secret: false,
           placeholder: "https://firecrawl.example.com",
           description:
-            "Optional base URL of a self-hosted Firecrawl instance, without the /v1 or /v2 path. Leave empty to use https://api.firecrawl.dev. Private/overlay targets (RFC 1918, Tailscale, NetBird, private hostnames) require the self-hosted runtime to enable OOMOL_CONNECT_ALLOW_PRIVATE_NETWORK.",
+            "Optional base URL of a self-hosted Firecrawl instance, without the /v1 or /v2 path. Leave empty to use https://api.firecrawl.dev. HTTPS is recommended. HTTP sends your API key and request content in plaintext; use it only on a trusted network. Private/overlay targets (RFC 1918, Tailscale, NetBird, private hostnames) require the self-hosted runtime to enable OOMOL_CONNECT_ALLOW_PRIVATE_NETWORK.",
         },
       ],
     },
